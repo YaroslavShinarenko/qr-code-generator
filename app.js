@@ -1,13 +1,13 @@
 import QRCode from "qrcode-svg";
 
-function generateQRCode(content) {
+function generateQRCode(content, size, padding, backgroundColor, codeColor) {
   const qrcode = new QRCode({
     content: content,
-    padding: 2,
-    width: 256,
-    height: 256,
-    color: "#000000",
-    background: "transparent",
+    padding: padding,
+    width: size,
+    height: size,
+    color: codeColor,
+    background: backgroundColor,
     ecl: "M",
   });
 
@@ -23,12 +23,52 @@ function generateQRCode(content) {
 
 function displayQRCode() {
   const content = document.getElementById("content").value;
-  const qrCodeData = generateQRCode(content);
+  const size = parseInt(document.getElementById("size").value);
+  const isTransparent = document.getElementById("setTransparent").checked;
+  const backgroundColor = isTransparent
+    ? "transparent"
+    : document.getElementById("backgroundColor").value;
+  const codeColor = document.getElementById("codeColor").value;
+  const padding = document.getElementById("padding").value;
+
+  const qrCodeData = generateQRCode(
+    content,
+    size,
+    padding,
+    backgroundColor,
+    codeColor
+  );
 
   document.getElementById("qrCode").innerHTML = qrCodeData.svgString;
-  const downloadLink = document.getElementById("downloadLink");
-  downloadLink.href = qrCodeData.downloadUrl;
-  downloadLink.style.display = "block";
+  const downloadLinkSvg = document.getElementById("downloadLinkSvg");
+  downloadLinkSvg.href = qrCodeData.downloadUrl;
+  downloadLinkSvg.style.display = "block";
+
+  convertSvgToPng(qrCodeData.svgString, function (pngDataUrl) {
+    const downloadLinkPng = document.getElementById("downloadLinkPng");
+    downloadLinkPng.href = pngDataUrl;
+    downloadLinkPng.style.display = "block";
+  });
+}
+
+function convertSvgToPng(svgString, callback) {
+  const img = new Image();
+  const svgBlob = new Blob([svgString], {
+    type: "image/svg+xml;charset=utf-8",
+  });
+  const url = URL.createObjectURL(svgBlob);
+
+  img.onload = function () {
+    const canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    const imgPng = canvas.toDataURL("image/png");
+    callback(imgPng);
+  };
+  img.src = url;
 }
 
 document
